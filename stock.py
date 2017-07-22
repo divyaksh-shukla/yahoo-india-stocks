@@ -194,7 +194,7 @@ def main():
 
     sys.argv = sys.argv[1:]
     for code in sys.argv:
-        indian_stock = IndianStock('^BSESN')
+        indian_stock = IndianStock(code)
 
         indian_stock.output_line(indian_stock.gettime())
         indian_stock.output_line('Current Price = ' + str(indian_stock.get_current_price()))
