@@ -4,6 +4,7 @@ import time
 import smtplib
 import os
 import sys
+import re
 
 '''
 A program that runs from a cronjob to extract the rates of required indian stocks mention in the list
@@ -26,18 +27,26 @@ class IndianStock:
     graph_filepath = None
 
     home_dir = None     # os.path.expandvars('$HOME')
-    stock_dir = 'Documents/Coding/python_programs/india_finance/'
+    stock_dir = os.path.join(os.getcwd(), 'india_finance')
 
     title = ['h1', {'data-reactid': '7'}]
-    present_price = ['span', {'data-reactid': '36'}]
-    opening_price = ['td', {'data-test': 'OPEN-value'}]
-    previous_close_price = ['td', {'data-test': 'PREV_CLOSE-value'}]
-    day_range_price = ['td', {'data-test': 'DAYS_RANGE-value'}]
-    price_change = ['span', {'data-reactid': '37'}]
+    # present_price = ['span', {'data-reactid': '36'}]
+    # opening_price = ['td', {'data-test': 'OPEN-value'}]
+    # previous_close_price = ['td', {'data-test': 'PREV_CLOSE-value'}]
+    # day_range_price = ['td', {'data-test': 'DAYS_RANGE-value'}]
+    # price_change = ['span', {'data-reactid': '37'}]
+
+    present_price = 14
+    previous_close_price = 0
+    opening_price = 1
+    day_range_price = 4
+    price_change = 13   # to be done
+
+    values = []
 
     def __init__(self, code):
         self.home_dir = os.path.expandvars('$HOME') + '/'
-        self.stock_dir = self.home_dir + self.stock_dir + code
+        self.stock_dir = os.path.join(self.stock_dir, code)
 
         if not(os.path.exists(self.stock_dir)):
             os.makedirs(self.stock_dir)
@@ -71,6 +80,16 @@ class IndianStock:
         self.soup = bs(self.page, 'html.parser')
         self.log('Page parsed, soup created')
         self.log('Stock for ' + self.soup.find(self.title[0], attrs=self.title[1]).get_text())
+        self.get_values()
+
+    def get_values(self):
+        datas = []
+        datas = self.soup.findAll('td')
+        for d in self.soup.findAll('span'):
+            datas.append(d)
+        for sp in datas:
+            if re.match(r'^([\d]+[\.|\,][\d]+)+', sp.text) and sp.text not in self.values:
+                self.values.append(sp.text)
 
     def refresh(self):
         self.page = get.urlopen(self.page_link)
@@ -81,8 +100,9 @@ class IndianStock:
         self.log('Stock for ' + self.soup.find(self.title[0], attrs=self.title[1]).get_text())
 
     def get_current_price(self):
-        if self.soup.find(self.present_price[0], attrs=self.present_price[1]).get_text() is not None:
-            price = str(self.soup.find(self.present_price[0], attrs=self.present_price[1]).get_text()).replace(',', '')
+        # if self.soup.find(self.present_price[0], attrs=self.present_price[1]).get_text() is not None:
+        if self.values[self.present_price] is not None:
+            price = str(self.values[self.present_price]).replace(',', '')
             price = float(price)
             self.log('Current price extracted : ' + str(price))
             return price
@@ -91,8 +111,9 @@ class IndianStock:
             return None
 
     def get_opening_price(self):
-        if self.soup.find(self.opening_price[0], attrs=self.opening_price[1]).get_text() is not None:
-            price = str(self.soup.find(self.opening_price[0], attrs=self.opening_price[1]).get_text()).replace(',', '')
+        # if self.soup.find(self.opening_price[0], attrs=self.opening_price[1]).get_text() is not None:
+        if self.values[self.opening_price] is not None:
+            price = str(self.values[self.opening_price]).replace(',', '')
             price = float(price)
             self.log('Opening price extracted : ' + str(price))
             return price
@@ -101,8 +122,9 @@ class IndianStock:
             return None
 
     def get_previous_closing_price(self):
-        if self.soup.find(self.previous_close_price[0], attrs=self.previous_close_price[1]).get_text() is not None:
-            price = str(self.soup.find(self.previous_close_price[0], attrs=self.previous_close_price[1]).get_text()).replace(',', '')
+        # if self.soup.find(self.previous_close_price[0], attrs=self.previous_close_price[1]).get_text() is not None:
+        if self.values[self.previous_close_price] is not None:
+            price = str(self.values[self.previous_close_price]).replace(',', '')
             price = float(price)
             self.log('Previous closing price extracted : ' + str(price))
             return price
@@ -111,8 +133,9 @@ class IndianStock:
             return None
 
     def get_day_range(self):
-        if self.soup.find(self.day_range_price[0], attrs=self.day_range_price[1]).get_text() is not None:
-            days_range = self.soup.find(self.day_range_price[0], attrs=self.day_range_price[1]).get_text()
+        # if self.soup.find(self.day_range_price[0], attrs=self.day_range_price[1]).get_text() is not None:
+        if self.values[self.day_range_price] is not None:
+            days_range = self.values[self.day_range_price]
             self.log('Day\'s range : ' + days_range)
             return days_range
         else:
@@ -120,8 +143,9 @@ class IndianStock:
             return None
 
     def get_change(self):
-        if self.soup.find(self.price_change[0], attrs=self.price_change[1]).get_text() is not None:
-            price_change = self.soup.find(self.price_change[0], attrs=self.price_change[1]).get_text()
+        # if self.soup.find(self.price_change[0], attrs=self.price_change[1]).get_text() is not None:
+        if self.values[self.price_change] is not None:
+            price_change = self.values[self.price_change]
             self.log('Price Change : ' + price_change)
             return price_change
         else:
